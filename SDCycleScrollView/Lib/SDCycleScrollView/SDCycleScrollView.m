@@ -150,18 +150,17 @@ NSString * const ID = @"SDCycleScrollViewCell";
     _mainView = mainView;
 }
 
-
 #pragma mark - properties
 
 - (void)setDelegate:(id<SDCycleScrollViewDelegate>)delegate
 {
     _delegate = delegate;
     
-    if ([self.delegate respondsToSelector:@selector(customCollectionViewCellClassForCycleScrollView:)] && [self.delegate customCollectionViewCellClassForCycleScrollView:self]) {
-        [self.mainView registerClass:[self.delegate customCollectionViewCellClassForCycleScrollView:self] forCellWithReuseIdentifier:ID];
-    }else if ([self.delegate respondsToSelector:@selector(customCollectionViewCellNibForCycleScrollView:)] && [self.delegate customCollectionViewCellNibForCycleScrollView:self]) {
-        [self.mainView registerNib:[self.delegate customCollectionViewCellNibForCycleScrollView:self] forCellWithReuseIdentifier:ID];
+    if ([self.delegate respondsToSelector:@selector(cy_registerCustomCollectionViewCellForCollectionView:)]) {
+        
+        [self.delegate cy_registerCustomCollectionViewCellForCollectionView:self.mainView];
     }
+
 }
 
 - (void)setPlaceholderImage:(UIImage *)placeholderImage
@@ -575,20 +574,17 @@ NSString * const ID = @"SDCycleScrollViewCell";
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    SDCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:ID forIndexPath:indexPath];
     
-    long itemIndex = [self pageControlIndexWithCurrentCellIndex:indexPath.item];
-    
-    if ([self.delegate respondsToSelector:@selector(setupCustomCell:forIndex:cycleScrollView:)] &&
-        [self.delegate respondsToSelector:@selector(customCollectionViewCellClassForCycleScrollView:)] && [self.delegate customCollectionViewCellClassForCycleScrollView:self]) {
-        [self.delegate setupCustomCell:cell forIndex:itemIndex cycleScrollView:self];
-        return cell;
-    }else if ([self.delegate respondsToSelector:@selector(setupCustomCell:forIndex:cycleScrollView:)] &&
-              [self.delegate respondsToSelector:@selector(customCollectionViewCellNibForCycleScrollView:)] && [self.delegate customCollectionViewCellNibForCycleScrollView:self]) {
-        [self.delegate setupCustomCell:cell forIndex:itemIndex cycleScrollView:self];
-        return cell;
+    if ([self.delegate respondsToSelector:@selector(cy_registerCustomCollectionViewCellForCollectionView:)] &&
+        [self.delegate respondsToSelector:@selector(cy_setupCustomCellForCollectionView:forIndexPath:)]) {
+        
+        return [self.delegate cy_setupCustomCellForCollectionView:collectionView forIndexPath:indexPath];
     }
     
+    SDCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:ID forIndexPath:indexPath];
+
+    long itemIndex = [self pageControlIndexWithCurrentCellIndex:indexPath.item];
+
     NSString *imagePath = self.imagePathsGroup[itemIndex];
     
     if (!self.onlyDisplayText && [imagePath isKindOfClass:[NSString class]]) {
@@ -601,7 +597,9 @@ NSString * const ID = @"SDCycleScrollViewCell";
             }
             cell.imageView.image = image;
         }
-    } else if (!self.onlyDisplayText && [imagePath isKindOfClass:[UIImage class]]) {
+    }
+    else if (!self.onlyDisplayText && [imagePath isKindOfClass:[UIImage class]]) {
+        
         cell.imageView.image = (UIImage *)imagePath;
     }
     
