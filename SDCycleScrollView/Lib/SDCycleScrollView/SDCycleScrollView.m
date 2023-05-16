@@ -87,6 +87,7 @@ NSString * const ID = @"SDCycleScrollViewCell";
     _pageControlDotSize = kCycleScrollViewInitialPageControlDotSize;
     _pageControlBottomOffset = 0;
     _pageControlRightOffset = 0;
+    _pageDotBetweenSpacing = 8;
     _pageControlStyle = SDCycleScrollViewPageContolStyleClassic;
     _hidesForSinglePage = YES;
     _currentPageDotColor = [UIColor whiteColor];
@@ -156,9 +157,9 @@ NSString * const ID = @"SDCycleScrollViewCell";
 {
     _delegate = delegate;
     
-    if ([self.delegate respondsToSelector:@selector(cy_registerCustomCollectionViewCellForCollectionView:)]) {
+    if ([self.delegate respondsToSelector:@selector(cycleScrollView:registerCustomCellForCollectionView:)]) {
         
-        [self.delegate cy_registerCustomCollectionViewCellForCollectionView:self.mainView];
+        [self.delegate cycleScrollView:self registerCustomCellForCollectionView:self.mainView];
     }
 
 }
@@ -253,6 +254,13 @@ NSString * const ID = @"SDCycleScrollViewCell";
     }
 }
 
+- (void)setPageDotBackgroundView:(UIView *)pageDotBackgroundView {
+    
+    _pageDotBackgroundView = pageDotBackgroundView;
+    
+    [self insertSubview:pageDotBackgroundView atIndex:0];
+}
+
 - (void)setInfiniteLoop:(BOOL)infiniteLoop
 {
     _infiniteLoop = infiniteLoop;
@@ -302,9 +310,21 @@ NSString * const ID = @"SDCycleScrollViewCell";
     _totalItemsCount = self.infiniteLoop ? self.imagePathsGroup.count * 100 : self.imagePathsGroup.count;
     
     if (imagePathsGroup.count > 1) { // 由于 !=1 包含count == 0等情况
+        
+        if (self.pageDotBackgroundView) {
+            
+            self.pageDotBackgroundView.hidden = NO;
+        }
+        
         self.mainView.scrollEnabled = YES;
         [self setAutoScroll:self.autoScroll];
     } else {
+        
+        if (self.pageDotBackgroundView) {
+            
+            self.pageDotBackgroundView.hidden = YES;
+        }
+        
         self.mainView.scrollEnabled = NO;
         [self invalidateTimer];
     }
@@ -387,7 +407,7 @@ NSString * const ID = @"SDCycleScrollViewCell";
     if ((self.imagePathsGroup.count == 1) && self.hidesForSinglePage) return;
     
     int indexOnPageControl = [self pageControlIndexWithCurrentCellIndex:[self currentIndex]];
-    
+        
     switch (self.pageControlStyle) {
         case SDCycleScrollViewPageContolStyleAnimated:
         {
@@ -396,6 +416,7 @@ NSString * const ID = @"SDCycleScrollViewCell";
             pageControl.dotColor = self.currentPageDotColor;
             pageControl.userInteractionEnabled = NO;
             pageControl.currentPage = indexOnPageControl;
+            pageControl.spacingBetweenDots = self.pageDotBetweenSpacing;
             [self addSubview:pageControl];
             _pageControl = pageControl;
         }
@@ -426,7 +447,6 @@ NSString * const ID = @"SDCycleScrollViewCell";
         self.pageDotImage = self.pageDotImage;
     }
 }
-
 
 - (void)automaticScroll
 {
@@ -501,6 +521,7 @@ NSString * const ID = @"SDCycleScrollViewCell";
     }
     
     CGSize size = CGSizeZero;
+    
     if ([self.pageControl isKindOfClass:[TAPageControl class]]) {
         TAPageControl *pageControl = (TAPageControl *)_pageControl;
         if (!(self.pageDotImage && self.currentPageDotImage && CGSizeEqualToSize(kCycleScrollViewInitialPageControlDotSize, self.pageControlDotSize))) {
@@ -517,6 +538,7 @@ NSString * const ID = @"SDCycleScrollViewCell";
             }
         }
     }
+
     CGFloat x = (self.sd_width - size.width) * 0.5;
     if (self.pageControlAliment == SDCycleScrollViewPageContolAlimentRight) {
         x = self.mainView.sd_width - size.width - 10;
@@ -533,6 +555,18 @@ NSString * const ID = @"SDCycleScrollViewCell";
     pageControlFrame.origin.x -= self.pageControlRightOffset;
     self.pageControl.frame = pageControlFrame;
     self.pageControl.hidden = !_showPageControl;
+    
+    if (self.pageDotBackgroundView) {
+        
+        CGRect pageDotBackgroundViewFrame = self.pageDotBackgroundView.frame;
+        
+        pageDotBackgroundViewFrame.origin.x = pageControlFrame.origin.x - (pageDotBackgroundViewFrame.size.width - pageControlFrame.size.width) * 0.5;
+        
+        pageDotBackgroundViewFrame.origin.y = pageControlFrame.origin.y - (pageDotBackgroundViewFrame.size.height - pageControlFrame.size.height) * 0.5;
+        
+        self.pageDotBackgroundView.frame = pageDotBackgroundViewFrame;
+        
+    }
     
     if (self.backgroundImageView) {
         self.backgroundImageView.frame = self.bounds;
@@ -575,15 +609,14 @@ NSString * const ID = @"SDCycleScrollViewCell";
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     
-    if ([self.delegate respondsToSelector:@selector(cy_registerCustomCollectionViewCellForCollectionView:)] &&
-        [self.delegate respondsToSelector:@selector(cy_setupCustomCellForCollectionView:forIndexPath:)]) {
-        
-        return [self.delegate cy_setupCustomCellForCollectionView:collectionView forIndexPath:indexPath];
+    long itemIndex = [self pageControlIndexWithCurrentCellIndex:indexPath.item];
+    
+    if ([self.delegate respondsToSelector:@selector(cycleScrollView:customCellForCollectionView:index:)]) {
+                
+        return [self.delegate cycleScrollView:self customCellForCollectionView:collectionView index:itemIndex];
     }
     
     SDCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:ID forIndexPath:indexPath];
-
-    long itemIndex = [self pageControlIndexWithCurrentCellIndex:indexPath.item];
 
     NSString *imagePath = self.imagePathsGroup[itemIndex];
     

@@ -59,19 +59,15 @@ typedef enum {
 - (void)cycleScrollView:(SDCycleScrollView *)cycleScrollView didScrollToIndex:(NSInteger)index;
 
 
-
-
-
-
 // 不需要自定义轮播cell的请忽略以下两个的代理方法
 
 // ========== 轮播自定义cell ==========
 
 /** 如果你需要自定义cell样式，请在实现此代理方法注册自定义Cell样式。 */
-- (void)cy_registerCustomCollectionViewCellForCollectionView:(UICollectionView *)collectionView;
+- (void)cycleScrollView:(SDCycleScrollView *)cycleScrollView registerCustomCellForCollectionView:(UICollectionView *)collectionView;
 
 /** 如果你自定义了cell样式，请在实现此代理方法为你的cell填充数据及返回Cell */
-- (UICollectionViewCell *)cy_setupCustomCellForCollectionView:(UICollectionView *)collectionView forIndexPath:(NSIndexPath *)indexPath;
+- (UICollectionViewCell *)cycleScrollView:(SDCycleScrollView *)cycleScrollView customCellForCollectionView:(UICollectionView *)collectionView index:(NSInteger )index;
 
 @end
 
@@ -177,6 +173,12 @@ typedef enum {
 
 /** 其他分页控件小圆标图片 */
 @property (nonatomic, strong) UIImage *pageDotImage;
+
+/** 其他分页控件小圆标之间的间距 Defalut 8 */
+@property (nonatomic, assign) CGFloat pageDotBetweenSpacing;
+
+/** 其他分页控件背景视图 */
+@property (nonatomic, strong) UIView *pageDotBackgroundView;
 
 /** 轮播文字label字体颜色 */
 @property (nonatomic, strong) UIColor *titleLabelTextColor;
